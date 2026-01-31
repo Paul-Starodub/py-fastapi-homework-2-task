@@ -5,19 +5,21 @@ from pydantic import BaseModel, Field
 from database.models import MovieStatusEnum
 
 
-class Actor(BaseModel):
+class CommonBase(BaseModel):
     id: int
     name: Annotated[str, Field(max_length=255)]
 
 
-class Genre(BaseModel):
-    id: int
-    name: Annotated[str, Field(max_length=255)]
+class Actor(CommonBase):
+    pass
 
 
-class Language(BaseModel):
-    id: int
-    name: Annotated[str, Field(max_length=255)]
+class Genre(CommonBase):
+    pass
+
+
+class Language(CommonBase):
+    pass
 
 
 class Country(BaseModel):
