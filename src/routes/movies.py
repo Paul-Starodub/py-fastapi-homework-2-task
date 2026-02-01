@@ -17,7 +17,7 @@ async def get_movies(
     per_page: int = Query(10, ge=1, le=20),
 ):
     offset = (page - 1) * per_page
-    movies, total_items = await crud.get_movies_paginated(db=db, limit=per_page, offset=offset)
+    movies, total_items = await crud.movie_service.get_movies_paginated(db=db, limit=per_page, offset=offset)
     if not movies:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No movies found.")
     total_pages = math.ceil(total_items / per_page)
@@ -32,7 +32,7 @@ async def get_movies(
 
 @router.get("/movies/{movie_id}/", response_model=MovieListItemSchema)
 async def get_movie_by_id(movie_id: int, db: Annotated[AsyncSession, Depends(get_db)]):
-    movie = await crud.get_movie_by_id(db=db, movie_id=movie_id)
+    movie = await crud.movie_service.get_movie_by_id(db=db, movie_id=movie_id)
     if movie is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Movie with the given ID was not found.")
     return movie
@@ -40,7 +40,7 @@ async def get_movie_by_id(movie_id: int, db: Annotated[AsyncSession, Depends(get
 
 @router.post("/movies/", status_code=status.HTTP_201_CREATED, response_model=MovieListItemSchema)
 async def create_movie(movie_data: schemas.MovieDetailSchema, db: Annotated[AsyncSession, Depends(get_db)]):
-    movie = await crud.create_movie(db=db, movie_data=movie_data)
+    movie = await crud.movie_service.create_movie(db=db, movie_data=movie_data)
     return movie
 
 
@@ -48,10 +48,10 @@ async def create_movie(movie_data: schemas.MovieDetailSchema, db: Annotated[Asyn
 async def update_movie(
     movie_id: int, movie_data: schemas.MovieUpdateSchema, db: Annotated[AsyncSession, Depends(get_db)]
 ):
-    await crud.update_movie(db=db, movie_id=movie_id, movie_data=movie_data)
+    await crud.movie_service.update_movie(db=db, movie_id=movie_id, movie_data=movie_data)
     return {"detail": "Movie updated successfully."}
 
 
 @router.delete("/movies/{movie_id}/", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_movie(movie_id: int, db: Annotated[AsyncSession, Depends(get_db)]):
-    await crud.delete_movie(db=db, movie_id=movie_id)
+    await crud.movie_service.delete_movie(db=db, movie_id=movie_id)
