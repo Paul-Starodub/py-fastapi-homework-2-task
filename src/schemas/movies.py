@@ -72,7 +72,7 @@ class MovieListItemSchema(MovieBase, MovieStatusSchema):
 
 class MovieDetailSchema(MovieBaseSchema, MovieStatusSchema):
     budget: Decimal = Field(max_digits=15, decimal_places=2, ge=0)
-    revenue: float
+    revenue: float = Field(ge=0)
     country: str
     genres: list[str]
     actors: list[str]
