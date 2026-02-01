@@ -18,7 +18,7 @@ async def get_or_create(db: AsyncSession, model, field: str, value: str):
 
 
 async def get_movies_paginated(db: AsyncSession, limit: int, offset: int):
-    stmt = select(MovieModel).limit(limit).offset(offset)
+    stmt = select(MovieModel).limit(limit).offset(offset).order_by(MovieModel.id.desc())
     result = await db.execute(stmt)
     movies = result.scalars().all()
     count_stmt = select(func.count()).select_from(MovieModel)
