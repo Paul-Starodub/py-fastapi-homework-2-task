@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 import crud
+import schemas
 from database import get_db
 from schemas import MovieListResponseSchema, MovieListItemSchema
 
@@ -35,4 +36,10 @@ async def get_movie_by_id(movie_id: int, db: Annotated[AsyncSession, Depends(get
     movie = await crud.get_movie_by_id(db=db, movie_id=movie_id)
     if movie is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Movie with the given ID was not found.")
+    return movie
+
+
+@router.post("/movies/", status_code=status.HTTP_201_CREATED, response_model=MovieListItemSchema)
+async def create_movie(movie_data: schemas.MovieDetailSchema, db: Annotated[AsyncSession, Depends(get_db)]):
+    movie = await crud.create_movie(db=db, movie_data=movie_data)
     return movie

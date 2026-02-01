@@ -38,7 +38,7 @@ class MovieBaseSchema(BaseModel):
     score: float
     overview: str
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, json_encoders={Decimal: float})
 
 
 class MovieBase(MovieBaseSchema):
