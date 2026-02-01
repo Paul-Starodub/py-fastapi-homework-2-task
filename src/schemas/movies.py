@@ -1,7 +1,7 @@
 from datetime import date
 from decimal import Decimal
-from typing import Annotated, Literal
-from pydantic import BaseModel, Field
+from typing import Annotated
+from pydantic import BaseModel, Field, ConfigDict
 from database.models import MovieStatusEnum
 
 
@@ -24,8 +24,12 @@ class Language(CommonBase):
 
 class Country(BaseModel):
     id: int
-    name: Annotated[str, Field(max_length=3)]
-    name: Annotated[str, Field(max_length=255)]
+    code: Annotated[str, Field(max_length=3)]
+    name: Annotated[str | None, Field(max_length=255)] = None
+
+
+class MovieStatusSchema(BaseModel):
+    status: MovieStatusEnum
 
 
 class MovieBaseSchema(BaseModel):
@@ -34,13 +38,22 @@ class MovieBaseSchema(BaseModel):
     score: float
     overview: str
 
+    model_config = ConfigDict(from_attributes=True)
 
-class MovieListResponseSchema(MovieBaseSchema):
+
+class MovieBase(MovieBaseSchema):
     id: int
 
 
-class MovieListItemSchema(MovieBaseSchema):
-    status: Literal[MovieStatusEnum.RELEASED, MovieStatusEnum.POST_PRODUCTION, MovieStatusEnum.IN_PRODUCTION]
+class MovieListResponseSchema(BaseModel):
+    movies: list[MovieBase]
+    prev_page: str | None
+    next_page: str | None
+    total_pages: int
+    total_items: int
+
+
+class MovieListItemSchema(MovieBase, MovieStatusSchema):
     budget: Decimal = Field(max_digits=15, decimal_places=2)
     revenue: float
     country: Country
@@ -49,5 +62,10 @@ class MovieListItemSchema(MovieBaseSchema):
     languages: list[Language]
 
 
-class MovieDetailSchema(MovieListItemSchema):
-    pass
+class MovieDetailSchema(MovieBaseSchema, MovieStatusSchema):
+    budget: Decimal = Field(max_digits=15, decimal_places=2)
+    revenue: float
+    country: str
+    genres: list[str]
+    actors: list[str]
+    languages: list[str]
