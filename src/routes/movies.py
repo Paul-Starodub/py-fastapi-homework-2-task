@@ -1,6 +1,6 @@
 import math
 from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 import crud
 import schemas
@@ -12,6 +12,7 @@ router = APIRouter()
 
 @router.get("/movies/", response_model=MovieListResponseSchema)
 async def get_movies(
+    request: Request,  # <- add this
     db: Annotated[AsyncSession, Depends(get_db)],
     page: int = Query(1, ge=1),
     per_page: int = Query(10, ge=1, le=20),
@@ -20,11 +21,17 @@ async def get_movies(
     movies, total_items = await crud.movie_service.get_movies_paginated(db=db, limit=per_page, offset=offset)
     if not movies:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No movies found.")
+
     total_pages = math.ceil(total_items / per_page)
+    base_path = request.url.path
+    if base_path.startswith("/api/v1"):
+        base_path = base_path[len("/api/v1") :]
+    prev_page = f"{base_path}?page={page - 1}&per_page={per_page}" if page > 1 else None
+    next_page = f"{base_path}?page={page + 1}&per_page={per_page}" if page < total_pages else None
     return MovieListResponseSchema(
         movies=movies,
-        prev_page=(f"/theater/movies/?page={page - 1}&per_page={per_page}" if page > 1 else None),
-        next_page=(f"/theater/movies/?page={page + 1}&per_page={per_page}" if page < total_pages else None),
+        prev_page=prev_page,
+        next_page=next_page,
         total_pages=total_pages,
         total_items=total_items,
     )
