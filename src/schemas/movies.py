@@ -1,6 +1,6 @@
 from datetime import date
 from decimal import Decimal
-from typing import Annotated
+from typing import Annotated, Optional
 from pydantic import BaseModel, Field, ConfigDict
 from database.models import MovieStatusEnum
 
@@ -69,3 +69,17 @@ class MovieDetailSchema(MovieBaseSchema, MovieStatusSchema):
     genres: list[str]
     actors: list[str]
     languages: list[str]
+
+
+class MovieUpdateSchema(BaseModel):
+    name: Optional[str] = Field(None, max_length=255)
+    date: Optional[date] = None
+    score: Optional[float] = None
+    overview: Optional[str] = None
+    status: Optional[MovieStatusEnum] = None
+    budget: Optional[Decimal] = Field(None, max_digits=15, decimal_places=2)
+    revenue: Optional[float] = None
+    country: Optional[str] = None
+    genres: Optional[list[str]] = None
+    actors: Optional[list[str]] = None
+    languages: Optional[list[str]] = None

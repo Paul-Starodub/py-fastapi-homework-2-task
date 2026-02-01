@@ -1,7 +1,6 @@
 import math
 from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 import crud
 import schemas
@@ -43,3 +42,16 @@ async def get_movie_by_id(movie_id: int, db: Annotated[AsyncSession, Depends(get
 async def create_movie(movie_data: schemas.MovieDetailSchema, db: Annotated[AsyncSession, Depends(get_db)]):
     movie = await crud.create_movie(db=db, movie_data=movie_data)
     return movie
+
+
+@router.patch("/movies/{movie_id}/", status_code=status.HTTP_200_OK)
+async def update_movie(
+    movie_id: int, movie_data: schemas.MovieUpdateSchema, db: Annotated[AsyncSession, Depends(get_db)]
+):
+    await crud.update_movie(db=db, movie_id=movie_id, movie_data=movie_data)
+    return {"detail": "Movie updated successfully."}
+
+
+@router.delete("/movies/{movie_id}/", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_movie(movie_id: int, db: Annotated[AsyncSession, Depends(get_db)]):
+    await crud.delete_movie(db=db, movie_id=movie_id)

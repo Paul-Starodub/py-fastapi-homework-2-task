@@ -85,45 +85,29 @@ async def create_movie(db: AsyncSession, movie_data: MovieDetailSchema):
     return result.scalar_one()
 
 
-# async def update_movie(db: AsyncSession, movie_id: int, movie_data: MovieDetailSchema):
-#     stmt = select(MovieModel).where(MovieModel.id == movie_id)
-#     result = await db.execute(stmt)
-#     movie = result.scalar_one_or_none()
-#     if not movie:
-#         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Movie with the given ID was not found.")
-#     movie.name = movie_data.name or movie.name
-#     movie.date = movie_data.date or movie.date
-#     movie.score = movie_data.score or movie.score
-#     movie.overview = movie_data.overview or movie.overview
-#     movie.status = movie_data.status or movie.status
-#     movie.budget = movie_data.budget or movie.budget
-#     movie.revenue = movie_data.revenue or movie.revenue
-#     await safe_commit(db, movie_name=movie_data.name, release_date=movie_data.date)
-
-
-async def update_movie(
-    db: AsyncSession,
-    movie_id: int,
-    movie_data: MovieUpdateSchema,
-):
-    stmt = select(MovieModel).where(MovieModel.id == movie_id)
+async def update_movie(db: AsyncSession, movie_id: int, movie_data: MovieUpdateSchema):
+    stmt = (
+        select(MovieModel)
+        .where(MovieModel.id == movie_id)
+        .options(
+            selectinload(MovieModel.country),
+            selectinload(MovieModel.genres),
+            selectinload(MovieModel.actors),
+            selectinload(MovieModel.languages),
+        )
+    )
     result = await db.execute(stmt)
     movie = result.scalar_one_or_none()
-
     if movie is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Movie with the given ID was not found.",
         )
-
     update_fields = movie_data.model_dump(exclude_unset=True)
-
     for field, value in update_fields.items():
         setattr(movie, field, value)
-
     await db.commit()
     await db.refresh(movie)
-
     return movie
 
 
