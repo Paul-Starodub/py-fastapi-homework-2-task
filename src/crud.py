@@ -1,9 +1,22 @@
+from datetime import date
+from fastapi import HTTPException, status
 from sqlalchemy import select, Result, func
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload, joinedload
-from database import MovieModel
-from database.models import GenreModel, ActorModel, LanguageModel, CountryModel
+from database.models import GenreModel, ActorModel, LanguageModel, CountryModel, MovieModel
 from schemas import MovieDetailSchema
+
+
+async def safe_commit(db: AsyncSession, *, movie_name: str | None = None, release_date: date | None = None):
+    try:
+        await db.commit()
+    except IntegrityError as e:
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(f"A movie with the name '{movie_name}' " f"and release date '{release_date}' already exists."),
+        )
 
 
 async def get_or_create(db: AsyncSession, model, field: str, value: str):
@@ -57,7 +70,7 @@ async def create_movie(db: AsyncSession, movie_data: MovieDetailSchema):
     movie.actors = [await get_or_create(db, ActorModel, "name", name) for name in movie_data.actors]
     movie.languages = [await get_or_create(db, LanguageModel, "name", name) for name in movie_data.languages]
     db.add(movie)
-    await db.commit()
+    await safe_commit(db, movie_name=movie_data.name, release_date=movie_data.date)
     stmt = (
         select(MovieModel)
         .options(
