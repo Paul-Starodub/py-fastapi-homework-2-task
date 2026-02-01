@@ -5,7 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload, joinedload
 from database.models import GenreModel, ActorModel, LanguageModel, CountryModel, MovieModel
-from schemas import MovieDetailSchema
+from schemas import MovieDetailSchema, MovieUpdateSchema
 
 
 async def safe_commit(db: AsyncSession, *, movie_name: str | None = None, release_date: date | None = None):
@@ -83,3 +83,58 @@ async def create_movie(db: AsyncSession, movie_data: MovieDetailSchema):
     )
     result = await db.execute(stmt)
     return result.scalar_one()
+
+
+# async def update_movie(db: AsyncSession, movie_id: int, movie_data: MovieDetailSchema):
+#     stmt = select(MovieModel).where(MovieModel.id == movie_id)
+#     result = await db.execute(stmt)
+#     movie = result.scalar_one_or_none()
+#     if not movie:
+#         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Movie with the given ID was not found.")
+#     movie.name = movie_data.name or movie.name
+#     movie.date = movie_data.date or movie.date
+#     movie.score = movie_data.score or movie.score
+#     movie.overview = movie_data.overview or movie.overview
+#     movie.status = movie_data.status or movie.status
+#     movie.budget = movie_data.budget or movie.budget
+#     movie.revenue = movie_data.revenue or movie.revenue
+#     await safe_commit(db, movie_name=movie_data.name, release_date=movie_data.date)
+
+
+async def update_movie(
+    db: AsyncSession,
+    movie_id: int,
+    movie_data: MovieUpdateSchema,
+):
+    stmt = select(MovieModel).where(MovieModel.id == movie_id)
+    result = await db.execute(stmt)
+    movie = result.scalar_one_or_none()
+
+    if movie is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Movie with the given ID was not found.",
+        )
+
+    update_fields = movie_data.model_dump(exclude_unset=True)
+
+    for field, value in update_fields.items():
+        setattr(movie, field, value)
+
+    await db.commit()
+    await db.refresh(movie)
+
+    return movie
+
+
+async def delete_movie(db: AsyncSession, movie_id: int) -> None:
+    stmt = select(MovieModel).where(MovieModel.id == movie_id)
+    result = await db.execute(stmt)
+    movie = result.scalar_one_or_none()
+    if movie is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Movie with the given ID was not found.",
+        )
+    await db.delete(movie)
+    await db.commit()
